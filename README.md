@@ -37,3 +37,8 @@ Settings → Pages → Deploy from a branch → main / (root)
 입력 후 **클라우드에 저장(업로드)** / **클라우드에서 불러오기** 버튼을 누르면 됩니다.
 
 > 팁: “변경 시 자동 업로드”를 켜두면, 입력할 때마다 자동으로 저장돼요.
+
+
+## (옵션) 암호만으로 URL/토큰 불러오기(레지스트리)
+- stock-app/registry_script.gs 를 새 Apps Script 프로젝트에 붙여넣고 웹앱으로 배포
+- 생성된 /exec URL을 stock-app/app.js 의 REGISTRY_URL 에 넣은 뒤 다시 배포
