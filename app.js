@@ -534,40 +534,91 @@ function setCloseFor(asOfIso, company, value) {
 function buildCloseTable(ledger) {
   const asOfIso = $("asOfDate").value || todayISO();
   const tbody = $("closeTable").querySelector("tbody");
+
+  // 기존 행들의 현재 입력값 보존 (포커스 유지)
+  const focused = document.activeElement;
+  const focusedCompany = focused ? focused.getAttribute("data-close-company-name") : null;
+  const focusedField = focused ? focused.getAttribute("data-close-field") : null;
+
   tbody.innerHTML = "";
 
-  const companies = getCompaniesInPortfolio(ledger);
-  if (!companies.length) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="3" style="color:#64748b">기업명을 입력하면 여기에서 기준일 종가를 한 번만 입력할 수 있어요.</td>`;
-    tbody.appendChild(tr);
-    return;
-  }
+  // closeMap에 저장된 기업들 + 행 추가로 새로 입력 중인 임시 행들 표시
+  const savedCompanies = Object.keys(closeMap[normDateIso(asOfIso)] || {});
 
-  for (const c of companies) {
+  for (const c of savedCompanies) {
     const v = getCloseFor(asOfIso, c);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td style="text-align:left">${c}</td>
-      <td><input type="number" step="any" data-close-company="${c}" value="${Number.isFinite(v) ? v : ""}" placeholder="미입력은 -"></td>
-      <td style="color:#475569; font-variant-numeric: tabular-nums">${asOfIso}</td>
-    `;
-    tbody.appendChild(tr);
+    addCloseRow(tbody, asOfIso, c, Number.isFinite(v) ? v : "", false);
+  }
+}
+
+function addCloseRow(tbody, asOfIso, companyVal, priceVal, focusCompany) {
+  const candidates = getCompaniesInPortfolio(computeLedger(rows, asOfIso));
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td>
+      <input type="text" list="closeCompanyList" placeholder="기업명"
+        data-close-company-name="${companyVal}"
+        data-close-field="company"
+        value="${companyVal}" style="width:100%">
+    </td>
+    <td>
+      <input type="number" step="any" placeholder="종가"
+        data-close-company-name="${companyVal}"
+        data-close-field="price"
+        value="${priceVal !== "" ? priceVal : ""}" style="width:100%">
+    </td>
+    <td style="color:#475569; font-variant-numeric: tabular-nums">${asOfIso}</td>
+    <td><button class="mini-danger" data-close-del>삭제</button></td>
+  `;
+  tbody.appendChild(tr);
+
+  const companyInp = tr.querySelector('[data-close-field="company"]');
+  const priceInp = tr.querySelector('[data-close-field="price"]');
+
+  // datalist 자동완성 (매매기록 기업명 목록)
+  let dl = document.getElementById("closeCompanyList");
+  if (!dl) {
+    dl = document.createElement("datalist");
+    dl.id = "closeCompanyList";
+    document.body.appendChild(dl);
+  }
+  dl.innerHTML = candidates.map(c => `<option value="${c}">`).join("");
+
+  function save() {
+    const company = companyInp.value.trim();
+    const price = Number(priceInp.value);
+    // 이전 기업명 key 정리
+    const oldName = companyInp.getAttribute("data-close-company-name");
+    if (oldName && oldName !== company) {
+      setCloseFor(asOfIso, oldName, NaN);
+    }
+    if (company) {
+      companyInp.setAttribute("data-close-company-name", company);
+      priceInp.setAttribute("data-close-company-name", company);
+      if (priceInp.value !== "" && Number.isFinite(price)) {
+        setCloseFor(asOfIso, company, price);
+      } else if (priceInp.value === "") {
+        setCloseFor(asOfIso, company, NaN);
+      }
+    }
+    const ledger2 = computeLedger(rows, asOfIso);
+    updateDerived(ledger2);
   }
 
-  // IMPORTANT: 입력 중 포커스가 날아가지 않게, 여기서는 renderFull()을 호출하지 않음.
-  // closeMap만 업데이트하고, 파생(평가손익/대시보드)만 다시 계산한다.
-  tbody.querySelectorAll("input[data-close-company]").forEach((inp) => {
-    inp.addEventListener("input", () => {
-      const company = inp.getAttribute("data-close-company");
-      const v = Number(inp.value);
-      if (inp.value === "") setCloseFor(asOfIso, company, NaN);
-      else setCloseFor(asOfIso, company, v);
+  companyInp.addEventListener("change", save);
+  companyInp.addEventListener("blur", save);
+  priceInp.addEventListener("input", save);
 
-      const ledger2 = computeLedger(rows, asOfIso);
-      updateDerived(ledger2);
-    });
+  // 삭제 버튼
+  tr.querySelector("[data-close-del]").addEventListener("click", () => {
+    const company = companyInp.value.trim();
+    if (company) setCloseFor(asOfIso, company, NaN);
+    tr.remove();
+    const ledger2 = computeLedger(rows, asOfIso);
+    updateDerived(ledger2);
   });
+
+  if (focusCompany) companyInp.focus();
 }
 
 function applyBulkClose() {
@@ -763,7 +814,7 @@ function buildTable(rows, ledger) {
 
       tr.innerHTML = `
         <td><input type="date" value="${r.date || ""}" data-k="date" data-i="${idx}"></td>
-        <td><input type="text" value="${r.company || ""}" placeholder="예: 삼성전자" data-k="company" data-i="${idx}"></td>
+        <td><input type="text" list="closeCompanyList" value="${r.company || ""}" placeholder="예: 삼성전자" data-k="company" data-i="${idx}"></td>
         <td>
           <select data-k="account" data-i="${idx}">
             <option value="">선택</option>
@@ -1259,12 +1310,28 @@ function updateDerived(ledger) {
   renderCharts(monthArr);
 }
 
+function refreshCompanyDatalist() {
+  const asOfIso = $("asOfDate").value || todayISO();
+  const ledger = computeLedger(rows, asOfIso);
+  const fromTrades = getCompaniesInPortfolio(ledger);
+  const fromClose = Object.keys(closeMap[normDateIso(asOfIso)] || {});
+  const all = Array.from(new Set([...fromTrades, ...fromClose])).sort((a,b)=>a.localeCompare(b));
+  let dl = document.getElementById("closeCompanyList");
+  if (!dl) {
+    dl = document.createElement("datalist");
+    dl.id = "closeCompanyList";
+    document.body.appendChild(dl);
+  }
+  dl.innerHTML = all.map(c => `<option value="${c}">`).join("");
+}
+
 function renderFull() {
   const iso = $("asOfDate").value || todayISO();
   const ledger = computeLedger(rows, iso);
   buildTable(rows, ledger);
   buildCloseTable(ledger);
   updateDerived(ledger);
+  refreshCompanyDatalist();
 }
 
 function addEmptyRow() {
@@ -1302,7 +1369,11 @@ document.addEventListener("DOMContentLoaded", () => {
     $("asOfDate").value = (localStorage.getItem(ASOF_KEY) || todayISO());
 
   $("addRowBtn").addEventListener("click", addEmptyRow);
-  $("applyBulkCloseBtn").addEventListener("click", applyBulkClose);
+  $("addCloseRowBtn").addEventListener("click", () => {
+    const asOfIso = $("asOfDate").value || todayISO();
+    const tbody = $("closeTable").querySelector("tbody");
+    addCloseRow(tbody, asOfIso, "", "", true);
+  });
   $("clearCloseBtn").addEventListener("click", clearCloseForDate);
   $("exportBtn").addEventListener("click", exportCSV);
   $("clearBtn").addEventListener("click", clearAll);

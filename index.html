@@ -112,20 +112,12 @@
     <div class="row">
       <h2>기준일 종가 입력</h2>
       <div class="grow"></div>
-      <div class="hint">기준 날짜에 대해 종가를 기업별로 한 번만 입력하면 평가손익이 자동 계산돼요. (미입력은 -)</div>
+      <div class="hint">기준 날짜에 대해 종가를 기업별로 입력하면 평가손익이 자동 계산돼요. (미입력은 -)</div>
     </div>
 
-    <div class="row">
-      <div class="bulk-box">
-        <label for="bulkClose"><b>일괄 입력</b> (한 줄에 하나: <code>기업명, 종가</code> 또는 <code>기업명 종가</code>)</label>
-        <textarea id="bulkClose" placeholder="예)
-삼성전자, 71500
-TIGER 미국S&amp;P500 25120" rows="4"></textarea>
-        <div class="row" style="margin-top:8px">
-          <button id="applyBulkCloseBtn">일괄 적용</button>
-          <button class="secondary" id="clearCloseBtn">이 기준일 종가 전체 지우기</button>
-        </div>
-      </div>
+    <div class="row" style="margin-bottom:8px">
+      <button id="addCloseRowBtn">+ 행 추가</button>
+      <button class="secondary" id="clearCloseBtn" style="margin-left:8px">이 기준일 종가 전체 지우기</button>
     </div>
 
     <div class="table-wrap mini">
@@ -135,6 +127,7 @@ TIGER 미국S&amp;P500 25120" rows="4"></textarea>
             <th>기업명</th>
             <th>종가</th>
             <th>기준일</th>
+            <th></th>
           </tr>
         </thead>
         <tbody></tbody>
