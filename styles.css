@@ -27,7 +27,16 @@ select{padding:9px 10px}
 .table-wrap{overflow:auto;border:1px solid #e5e7eb;border-radius:10px}
 .table-wrap.mini table{min-width:980px}
 .table-wrap.data-entry{max-height:420px;overflow:auto}
-@media (max-width:900px){.table-wrap.data-entry{max-height:320px} .table-wrap.mini table{min-width:900px}}
+@media (max-width:900px){
+  .table-wrap.data-entry{max-height:320px}
+  .table-wrap.mini table{min-width:900px}
+  .table-wrap.data-entry th,
+  .table-wrap.data-entry td{padding:4px 4px}
+  .table-wrap.data-entry input[type="date"],
+  .table-wrap.data-entry input[type="text"],
+  .table-wrap.data-entry input[type="number"],
+  .table-wrap.data-entry select{padding:3px 4px;font-size:11px}
+}
 
 table{border-collapse:collapse;width:100%;min-width:1180px}
 th,td{border-bottom:1px solid #e5e7eb;padding:10px 8px;text-align:center;font-size:13px;white-space:nowrap}
@@ -149,11 +158,15 @@ tr.group-hidden{display:none}
   margin-top: 32px;
   max-height:480px;
   overflow-y:auto;
-  overflow-x:hidden;   /* 가로스크롤 제거 */
+  overflow-x:auto;
 }
 
 table{
   min-width:unset !important;
+}
+
+.table-wrap.data-entry table{
+  min-width:800px;
 }
 
 th,td{
