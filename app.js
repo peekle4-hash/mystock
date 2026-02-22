@@ -718,6 +718,12 @@ function renderHoldTableTo(tableId, items, emptyMsg) {
   const table = document.getElementById(tableId);
   if (!table) return;
   const tbody = table.querySelector("tbody");
+  const isCurrent = tableId === "holdTableCurrent";
+
+  // 현재 포커스된 종가 입력 보존
+  const focused = document.activeElement;
+  const focusedCompany = focused ? focused.getAttribute("data-hold-close") : null;
+
   tbody.innerHTML = "";
 
   if (!items.length) {
@@ -727,21 +733,52 @@ function renderHoldTableTo(tableId, items, emptyMsg) {
     return;
   }
 
+  const asOfIso = $("asOfDate").value || todayISO();
+
+  // 기준일 표시
+  if (isCurrent) {
+    const label = document.getElementById("holdAsOfLabel");
+    if (label) label.textContent = `기준일: ${asOfIso} 종가 기준`;
+  }
+
   for (const p of items) {
     const tr = document.createElement("tr");
+    const closeTd = isCurrent
+      ? `<td><input type="number" step="any"
+            data-hold-close="${p.company}"
+            value="${Number.isFinite(p.close) ? p.close : ""}"
+            placeholder="-"
+            style="width:90px;text-align:right"></td>`
+      : `<td>${Number.isFinite(p.close) ? fmtMoney(p.close) : "-"}</td>`;
+
     tr.innerHTML = `
       <td>${p.company}</td>
       <td>${p.account}</td>
       <td>${fmtQty(p.qty)}</td>
       <td>${Number.isFinite(p.avg) ? fmtMoney(p.avg) : "-"}</td>
       <td>${fmtMoney(p.cost)}</td>
-      <td>${Number.isFinite(p.close) ? fmtMoney(p.close) : "-"}</td>
+      ${closeTd}
       <td>${Number.isFinite(p.unreal) ? fmtMoney(p.unreal) : "-"}</td>
       <td>${fmtMoney(p.realizedCum)}</td>
       <td>${fmtMoney(p.total)}</td>
       <td>${Number.isFinite(p.ret) ? fmtPct(p.ret) : "-"}</td>
     `;
     tbody.appendChild(tr);
+  }
+
+  if (isCurrent) {
+    tbody.querySelectorAll("input[data-hold-close]").forEach(inp => {
+      const company = inp.getAttribute("data-hold-close");
+      if (company === focusedCompany) inp.focus();
+
+      inp.addEventListener("input", () => {
+        const v = Number(inp.value);
+        if (inp.value === "") setCloseFor(asOfIso, company, NaN);
+        else if (Number.isFinite(v)) setCloseFor(asOfIso, company, v);
+        const ledger2 = computeLedger(rows, asOfIso);
+        updateDerived(ledger2);
+      });
+    });
   }
 }
 
@@ -1329,7 +1366,6 @@ function renderFull() {
   const iso = $("asOfDate").value || todayISO();
   const ledger = computeLedger(rows, iso);
   buildTable(rows, ledger);
-  buildCloseTable(ledger);
   updateDerived(ledger);
   refreshCompanyDatalist();
 }
@@ -1369,11 +1405,7 @@ document.addEventListener("DOMContentLoaded", () => {
     $("asOfDate").value = (localStorage.getItem(ASOF_KEY) || todayISO());
 
   $("addRowBtn").addEventListener("click", addEmptyRow);
-  $("addCloseRowBtn").addEventListener("click", () => {
-    const asOfIso = $("asOfDate").value || todayISO();
-    const tbody = $("closeTable").querySelector("tbody");
-    addCloseRow(tbody, asOfIso, "", "", true);
-  });
+
   $("clearCloseBtn").addEventListener("click", clearCloseForDate);
   $("exportBtn").addEventListener("click", exportCSV);
   $("clearBtn").addEventListener("click", clearAll);

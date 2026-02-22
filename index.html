@@ -20,7 +20,7 @@
   <!-- 탭 네비게이션 -->
   <nav class="tabs" aria-label="페이지 탭">
     <button class="tab-btn active" data-tab="tab-dashboard" type="button">대시보드</button>
-    <button class="tab-btn" data-tab="tab-close" type="button">기준일 종가</button>
+    
     <button class="tab-btn" data-tab="tab-trades" type="button">매매기록</button>
     <button class="tab-btn" data-tab="tab-monthly" type="button">월별 수익률</button>
     <button class="tab-btn" data-tab="tab-sync" type="button">구글시트 연동</button>
@@ -107,8 +107,8 @@
     <div class="note">※ 계산 방식: <b>이동평균(평균단가)</b> 기준. 공매도/마이너스 보유수량은 지원 안 해요.</div>
   </section>
 
-  <!-- 2) 기준일 종가 입력 -->
-  <section class="card tab-page" id="tab-close">
+  <!-- 2) 기준일 종가 입력 - 탭에서 제거, 숨김 -->
+  <section class="card tab-page" id="tab-close" style="display:none">
     <div class="row">
       <h2>기준일 종가 입력</h2>
       <div class="grow"></div>
@@ -162,8 +162,9 @@
       </div>
     </div>
 
-    <div class="row" style="margin-top:10px">
+    <div class="row" style="margin-top:10px;align-items:center">
       <h3 class="h3" style="font-size:16px;margin:0">현재 보유중</h3>
+      <span id="holdAsOfLabel" style="margin-left:12px;font-size:13px;color:#64748b;font-weight:500"></span>
     </div>
 
     <div class="table-wrap mini">
@@ -175,7 +176,7 @@
             <th>보유수량</th>
             <th>평균단가</th>
             <th>보유원가</th>
-            <th>종가</th>
+            <th>종가 입력</th>
             <th>평가손익</th>
             <th>실현손익 누적</th>
             <th>총 손익</th>
