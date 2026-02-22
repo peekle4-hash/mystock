@@ -14,7 +14,15 @@ function normCompany_(s) {
   return (s == null ? "" : String(s)).trim().replace(/\s+/g, " ");
 }
 function normDateIso_(s) {
-  return (s == null ? "" : String(s)).trim().slice(0, 10);
+  if (s == null || s === "") return "";
+  // Google Sheets returns Date objects for date-formatted cells
+  if (s instanceof Date) {
+    const y = s.getFullYear();
+    const m = String(s.getMonth() + 1).padStart(2, "0");
+    const d = String(s.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return String(s).trim().slice(0, 10);
 }
 
 function jsonOut(obj) {
@@ -47,7 +55,10 @@ function ensureSpreadsheet_() {
 function clearAndWrite_(sheet, values) {
   sheet.clearContents();
   if (values && values.length) {
-    sheet.getRange(1, 1, values.length, values[0].length).setValues(values);
+    const range = sheet.getRange(1, 1, values.length, values[0].length);
+    // Set all cells to plain text first to prevent date auto-conversion
+    range.setNumberFormat("@");
+    range.setValues(values);
   }
 }
 
@@ -130,7 +141,7 @@ function doPost(e) {
         const [date, company, account, side, price, qty] = rv[i];
         if ([date, company, account, side, price, qty].every(v => v === "" || v === null)) continue;
         outRows.push({
-          date: (date || "").toString().slice(0,10),
+          date: normDateIso_(date),
           company: company || "",
           account: account || "",
           side: side || "",
