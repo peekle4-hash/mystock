@@ -719,20 +719,6 @@ function renderHoldTableTo(tableId, items, emptyMsg) {
   if (!table) return;
   const tbody = table.querySelector("tbody");
   const isCurrent = tableId === "holdTableCurrent";
-
-  // 현재 포커스된 종가 입력 보존
-  const focused = document.activeElement;
-  const focusedCompany = focused ? focused.getAttribute("data-hold-close") : null;
-
-  tbody.innerHTML = "";
-
-  if (!items.length) {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td colspan="10" style="color:#64748b">${emptyMsg}</td>`;
-    tbody.appendChild(tr);
-    return;
-  }
-
   const asOfIso = $("asOfDate").value || todayISO();
 
   // 기준일 표시
@@ -741,14 +727,48 @@ function renderHoldTableTo(tableId, items, emptyMsg) {
     if (label) label.textContent = `기준일: ${asOfIso} 종가 기준`;
   }
 
+  if (!items.length) {
+    tbody.innerHTML = "";
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="10" style="color:#64748b">${emptyMsg}</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  // 기존 행 재사용: 회사 목록이 같으면 input은 그대로 두고 계산 결과만 업데이트
+  const existingRows = Array.from(tbody.querySelectorAll("tr[data-hold-company]"));
+  const existingKeys = existingRows.map(r => r.getAttribute("data-hold-company"));
+  const newKeys = items.map(p => p.company);
+  const sameLayout = existingKeys.length === newKeys.length && existingKeys.every((k,i) => k === newKeys[i]);
+
+  if (sameLayout) {
+    // 레이아웃 동일 → input 건드리지 않고 계산 셀만 업데이트
+    existingRows.forEach((tr, i) => {
+      const p = items[i];
+      const cells = tr.querySelectorAll("td");
+      // cells: 기업명(0) 계좌(1) 수량(2) 평균단가(3) 원가(4) 종가input(5) 평가손익(6) 실현누적(7) 총손익(8) 수익률(9)
+      if (isCurrent) {
+        cells[6].textContent = Number.isFinite(p.unreal) ? fmtMoney(p.unreal) : "-";
+        cells[7].textContent = fmtMoney(p.realizedCum);
+        cells[8].textContent = fmtMoney(p.total);
+        cells[9].textContent = Number.isFinite(p.ret) ? fmtPct(p.ret) : "-";
+      }
+    });
+    return;
+  }
+
+  // 레이아웃 변경 → 전체 재렌더
+  tbody.innerHTML = "";
   for (const p of items) {
     const tr = document.createElement("tr");
+    tr.setAttribute("data-hold-company", p.company);
+
     const closeTd = isCurrent
       ? `<td><input type="number" step="any"
             data-hold-close="${p.company}"
             value="${Number.isFinite(p.close) ? p.close : ""}"
             placeholder="-"
-            style="width:90px;text-align:left"></td>`
+            style="width:90px;text-align:right"></td>`
       : `<td>${Number.isFinite(p.close) ? fmtMoney(p.close) : "-"}</td>`;
 
     tr.innerHTML = `
@@ -769,8 +789,6 @@ function renderHoldTableTo(tableId, items, emptyMsg) {
   if (isCurrent) {
     tbody.querySelectorAll("input[data-hold-close]").forEach(inp => {
       const company = inp.getAttribute("data-hold-close");
-      if (company === focusedCompany) inp.focus();
-
       inp.addEventListener("input", () => {
         const v = Number(inp.value);
         if (inp.value === "") setCloseFor(asOfIso, company, NaN);
