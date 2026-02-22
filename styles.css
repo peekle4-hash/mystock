@@ -217,3 +217,28 @@ textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;fon
   color: inherit;
   outline: none;
 }
+
+
+/* ===== Segmented Filter Button Hover Fix (전체/ISA/일반) =====
+   요구사항: 커서 올려도(hover) 색이 바뀌지 않게 고정
+*/
+.seg-btn:hover{
+  background:#fff !important;
+  color:#111827 !important;
+  filter:none !important;
+}
+.seg-btn.active:hover{
+  background:#111827 !important;
+  color:#fff !important;
+  filter:none !important;
+}
+/* 클릭(active)/포커스도 색 깨짐 방지 */
+.seg .seg-btn:active{
+  background:#fff !important;
+  color:#111827 !important;
+}
+.seg .seg-btn.active:active{
+  background:#111827 !important;
+  color:#fff !important;
+}
+
