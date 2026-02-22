@@ -3,8 +3,18 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8"/>
-  <meta content="width=device-width,initial-scale=1" name="viewport"/>
+  <meta content="width=device-width,initial-scale=1,viewport-fit=cover" name="viewport"/>
   <title>주식 매매기록 · 수익률 대시보드</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="./manifest.json"/>
+  <meta name="theme-color" content="#0f172a"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="주식 대시보드"/>
+  <link rel="apple-touch-icon" href="./icon-192.png"/>
+
   <link href="./styles.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
@@ -346,5 +356,80 @@
 </footer>
 
 <script src="./app.js"></script>
+<script>
+// ===== Service Worker 등록 (PWA) =====
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW 등록 완료:', reg.scope))
+      .catch(err => console.log('SW 등록 실패:', err));
+  });
+}
+
+// ===== 홈화면 추가 배너 (iOS 안내 / Android 설치 프롬프트) =====
+(function() {
+  // Android: beforeinstallprompt 이벤트
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner('android');
+  });
+
+  // iOS: Safari에서 standalone 모드가 아닐 때 안내
+  const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+
+  if (isIos && !isStandalone) {
+    showInstallBanner('ios');
+  }
+
+  function showInstallBanner(type) {
+    // 이미 닫은 경우 표시 안 함
+    if (localStorage.getItem('pwa_banner_dismissed')) return;
+
+    const banner = document.createElement('div');
+    banner.id = 'pwa-install-banner';
+    banner.style.cssText = `
+      position:fixed; bottom:0; left:0; right:0; z-index:9999;
+      background:#0f172a; color:#fff; padding:14px 18px;
+      display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+      box-shadow:0 -4px 24px rgba(0,0,0,0.3);
+      font-family:system-ui,sans-serif; font-size:14px;
+    `;
+
+    if (type === 'ios') {
+      banner.innerHTML = `
+        <span>📱 홈 화면에 추가하면 앱처럼 사용할 수 있어요!</span>
+        <span style="color:#94a3b8;font-size:12px">Safari 하단 공유 버튼 → '홈 화면에 추가'</span>
+        <button id="pwa-dismiss" style="margin-left:auto;background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:12px;">닫기</button>
+      `;
+    } else {
+      banner.innerHTML = `
+        <span>📲 이 앱을 설치해서 더 편하게 사용해보세요!</span>
+        <button id="pwa-install-btn" style="background:#3b82f6;border:none;color:#fff;border-radius:8px;padding:8px 16px;cursor:pointer;font-weight:700;font-size:13px;">설치하기</button>
+        <button id="pwa-dismiss" style="background:transparent;border:1px solid rgba(255,255,255,0.3);color:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:12px;">닫기</button>
+      `;
+    }
+
+    document.body.appendChild(banner);
+
+    document.getElementById('pwa-dismiss')?.addEventListener('click', () => {
+      banner.remove();
+      localStorage.setItem('pwa_banner_dismissed', '1');
+    });
+
+    document.getElementById('pwa-install-btn')?.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        banner.remove();
+      }
+    });
+  }
+})();
+</script>
 </body>
 </html>

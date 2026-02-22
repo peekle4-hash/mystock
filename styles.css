@@ -275,3 +275,58 @@ textarea{width:100%;border:1px solid #d1d5db;border-radius:10px;padding:10px;fon
   font-weight:600;
 }
 .btn-like:hover{ background:#f6f6f6; }
+
+
+/* ===== PWA / 모바일 최적화 ===== */
+
+/* 노치/홈바 영역 대응 */
+body {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+header {
+  padding-top: max(18px, env(safe-area-inset-top));
+  padding-left: max(18px, env(safe-area-inset-left));
+  padding-right: max(18px, env(safe-area-inset-right));
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Standalone(앱) 모드에서 상태바 영역 추가 */
+@media (display-mode: standalone) {
+  header {
+    padding-top: max(22px, env(safe-area-inset-top));
+  }
+}
+
+/* 모바일 탭 버튼 스크롤 가능하게 */
+@media (max-width: 600px) {
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    gap: 6px;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+
+  /* 모바일 KPI 카드 더 compact하게 */
+  .kpi-val { font-size: 15px; }
+  .kpi-title { font-size: 11px; }
+
+  /* 헤더 */
+  h1 { font-size: 17px; }
+  .sub { font-size: 11px; }
+
+  /* main 여백 줄이기 */
+  main { margin: 10px auto; padding: 0 8px; gap: 10px; }
+  .card { padding: 10px; border-radius: 10px; }
+
+  footer { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+}
