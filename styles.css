@@ -112,7 +112,8 @@ tr.group-hidden{display:none}
 .group-totals span{background:rgba(255,255,255,0.12);padding:4px 10px;border-radius:999px}
 
 /* 행 액션 */
-.row-actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.row-actions{display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:nowrap}
+.row-actions-grid{display:grid;grid-template-columns:1fr 1fr;gap:3px}
 .row-actions button{padding:6px 8px;border-radius:10px;font-weight:900;font-size:12px}
 .row-actions button.secondary{background:#fff;color:#111827;border:1px solid #d1d5db}
 .row-actions button.mini-danger{background:#b91c1c;border-color:#b91c1c;color:#fff}

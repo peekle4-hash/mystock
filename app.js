@@ -890,10 +890,12 @@ function buildTable(rows, ledger) {
         <td><span data-role="cumReal" data-i="${idx}">${Number.isFinite(pr.cumReal) ? fmtMoney(pr.cumReal) : "-"}</span></td>
         <td>
           <div class="row-actions">
-            <button class="secondary" data-ins-up="${idx}" type="button">위추가</button>
-            <button class="secondary" data-ins-down="${idx}" type="button">아래추가</button>
-            <button class="secondary" data-move-up="${idx}" type="button">↑</button>
-            <button class="secondary" data-move-down="${idx}" type="button">↓</button>
+            <div class="row-actions-grid">
+              <button class="secondary" data-ins-up="${idx}" type="button">위추가</button>
+              <button class="secondary" data-ins-down="${idx}" type="button">아래추가</button>
+              <button class="secondary" data-move-up="${idx}" type="button">↑</button>
+              <button class="secondary" data-move-down="${idx}" type="button">↓</button>
+            </div>
             <button class="mini-danger" data-del="${idx}" type="button">삭제</button>
           </div>
         </td>
