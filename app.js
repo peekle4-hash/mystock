@@ -1339,7 +1339,7 @@ const COMPANY_TICKER_MAP = {
 async function fetchStockPriceKR(company) {
   // 1) 매핑 테이블에서 티커 찾기
   let ticker = COMPANY_TICKER_MAP[company.trim()];
-  
+
   // 2) 매핑 없으면: 숫자 6자리면 KS 붙이기, 그 외는 그대로 (미국 주식 티커로 간주)
   if (!ticker) {
     const clean = company.trim().replace(/\s/g, '');
@@ -1350,18 +1350,19 @@ async function fetchStockPriceKR(company) {
     }
   }
 
-  // 3) Yahoo Finance API (CORS 우회용 공개 프록시)
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1d`;
-  
+  // Yahoo Finance는 브라우저에서 직접 호출 시 CORS 차단됨
+  // allorigins.win 무료 CORS 프록시로 우회
+  const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=1d';
+  const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(yahooUrl);
+
   try {
-    const res = await fetch(url, { 
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      mode: 'cors',
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const meta = data?.chart?.result?.[0]?.meta;
-    const price = meta?.regularMarketPrice || meta?.previousClose;
+    const res = await fetch(proxyUrl);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const wrapper = await res.json();
+    // allorigins는 { contents: "..." } 형태로 반환
+    const data = JSON.parse(wrapper.contents);
+    const meta = data && data.chart && data.chart.result && data.chart.result[0] && data.chart.result[0].meta;
+    const price = meta && (meta.regularMarketPrice || meta.previousClose);
     return (price && Number.isFinite(price)) ? price : null;
   } catch {
     return null;
